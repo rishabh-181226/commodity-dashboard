@@ -8,7 +8,6 @@ trading strategy backtest. Built to mirror the kind of market analytics
 workflows sold by energy data platforms like **Enverus MarketView** and
 **Enverus Sphere**.
 
-![dashboard preview placeholder](https://via.placeholder.com/900x400?text=Dashboard+Screenshot)
 
 ## What it does
 
@@ -80,9 +79,3 @@ backtested trading strategy are simplified statistical illustrations for
 demonstration purposes — not investment advice.
 
 ---
-
-## Setup
-
-Full step-by-step instructions for running locally, deploying to Streamlit
-Community Cloud, and configuring the EIA API key are in
-[`SETUP.md`](SETUP.md).
