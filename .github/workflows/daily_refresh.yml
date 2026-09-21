@@ -1,0 +1,54 @@
+name: Daily price refresh
+
+# Runs the refresh job automatically once a day, and commits the updated
+# database file back to the repo. This is what makes "daily refresh" real
+# for a Streamlit Community Cloud deployment: Streamlit Cloud only runs your
+# app when someone visits it, it has no built-in scheduler/cron. GitHub
+# Actions provides that missing piece — it runs on GitHub's infrastructure
+# on a schedule, independent of whether anyone is looking at the app.
+#
+# Flow:
+#   1. GitHub's cron trigger fires once a day (see `schedule` below)
+#   2. This checks out the repo, installs deps, runs refresh_data.py
+#   3. refresh_data.py pulls the latest price(s), upserts into the SQLite
+#      DB, and re-fits + caches the forecast
+#   4. If the DB file changed, this workflow commits it back to the repo
+#   5. Streamlit Cloud detects the repo change and redeploys automatically,
+#      so the live app is now serving today's data
+
+on:
+  schedule:
+    # 12:00 UTC daily (~7am US Central) — after EIA's daily price update
+    - cron: "0 12 * * *"
+  workflow_dispatch: {}  # lets you also trigger it manually from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily refresh
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+        run: python refresh_data.py
+
+      - name: Commit updated database
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/energy_data.db
+          git diff --staged --quiet || git commit -m "Daily data refresh: $(date -u +'%Y-%m-%d')"
+          git push
